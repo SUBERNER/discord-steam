@@ -64,15 +64,18 @@ class Client(discord.Client):
 
             if member:
                 # check if member has already sent in a steamID, automatically giving them the participating role
-                async for message in channel.history(limit=None):
-                    if member.mention in message:
+                with open("accounts.txt", "r") as f:  # checks if user has already been mentioned
+                    if member.mention in f.read():
+                        print(member.mention)
                         print(f"{member.name} already provided a SteamID")
                         await member.send(f"{member.mention} has been assigned the **{role.name}** role due to already provided a SteamID.")
+                        await member.add_roles(role)
                         return
 
                 # used to notify players how to participate
                 await member.send(f"welcome {member.mention} to **{server.name}**\nTO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:")
-                await member.send(f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\nYou will then be notified if the SteamID enter was valid or invalid. If the SteamID was invalid, make sure there are only numbers in the message sent and that you entered the SteamID correctly. If your SteamID was valid, you will given the **{role.name}** role allowing you to participate in the experiment session.\n**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD GE BANNED and GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT!**")
+                await member.send(f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://steamid.pro/).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\nYou will then be notified if the SteamID entered was valid or invalid. If the SteamID was invalid, make sure there are only numbers in the message sent and that you entered the SteamID correctly. If your SteamID was valid, you will given the **{role.name}** role allowing you to participate in the experiment session.\n**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT!**")
+                await member.send(f'**DO NOT SEND AN ACCOUNT FOR SOMEONE ELSE!!!**')
         except Exception as e:
             print(e)
 
@@ -100,7 +103,7 @@ class Client(discord.Client):
 
                         with open("accounts.txt", "r") as f:  # checks if SteamID is a duplicate
                             accounts = f.read()
-                            if message.content in accounts:
+                            if re.search(fr'(?<!<@)\b{re.escape(message.content)}\b(?!>)', accounts) is not None:
                                 print(f"{member.name} steam account already entered")
                                 await message.channel.send(f"{message.content} has already been entered, try again!")
                                 return  # stops form sending message to account channel
@@ -113,13 +116,13 @@ class Client(discord.Client):
                             await message.channel.send(f"{message.author.mention} has been assigned the **{role.name}** role!\n You are now able to participate in the experimental sessions!")
                         else:
                             await message.channel.send(f"{message.author.mention} has already been assigned the **{role.name}** role.")
-                            return  # stops form sending message to account channel
+                            print(f"Already Assigned role {role.name} to {member.name}")
 
             # sends data to account-channel
             channel = client.get_channel(CHANNEL_ID)
             await channel.send(f"{message.author.mention}: {message.content}{get_steam(message.content)}")  # displays users steam account to channel
             with open("accounts.txt", "a") as f:  # adds SteamID to list, making sure there are no duplicat accounts
-                f.write(f"{message.content}\n")
+                f.write(f"{message.author.mention} {message.content}{get_steam(message.content)}\n")
         except Exception as e:
             print(e)
 
