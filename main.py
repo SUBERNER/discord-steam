@@ -7,7 +7,8 @@ import re
 
 # loads variables from .env file
 load_dotenv()
-TOKEN = os.getenv("TOKEN")
+DISCORD = os.getenv("DISCORD")  # discord bot key
+STEAM = os.getenv("STEAM")  # web API key
 
 # all IDs used for identifying parts of the server
 SERVER_ID = 1148628177183326378
@@ -61,7 +62,6 @@ class Client(discord.Client):
             role = server.get_role(ROLE_ID)
             channel = self.get_channel(CHANNEL_ID)
             print(f"{member.name} joined {server.name}")
-
             if member:
                 # check if member has already sent in a steamID, automatically giving them the participating role
                 with open("accounts.txt", "r") as f:  # checks if user has already been mentioned
@@ -74,7 +74,8 @@ class Client(discord.Client):
 
                 # used to notify players how to participate
                 await member.send(f"welcome {member.mention} to **{server.name}**\nTO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:")
-                await member.send(f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://steamid.pro/).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\nYou will then be notified if the SteamID entered was valid or invalid. If the SteamID was invalid, make sure there are only numbers in the message sent and that you entered the SteamID correctly. If your SteamID was valid, you will given the **{role.name}** role allowing you to participate in the experiment session.\n**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT!**")
+                await member.send("**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT!**")
+                await member.send(f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\nYou will then be notified if the SteamID entered was valid or invalid. If the SteamID was invalid, make sure there are only numbers in the message sent and that you entered the SteamID correctly. If your SteamID was valid, you will given the **{role.name}** role allowing you to participate in the experiment session.")
                 await member.send(f'**DO NOT SEND AN ACCOUNT FOR SOMEONE ELSE!!!**')
         except Exception as e:
             print(e)
@@ -134,4 +135,4 @@ intents.members = True  # role assignment
 intents.dm_messages = True  # DM handling
 
 client = Client(intents=intents)
-client.run(TOKEN)
+client.run(DISCORD)
