@@ -15,27 +15,26 @@ STEAM = os.getenv("STEAM")  # web API key
 # each will one from each server for each language
 class Server:
     def __init__(self, server_id, role_id, channel_id):
-        self.server_id = server_id
-        self.role_id = role_id
-        self.channel_id = channel_id
+        self.server_id = server_id  # the server being used for research
+        self.role_id = role_id  # the role given to users when they want to participate
+        self.channel_id = channel_id  # the channel that will be sent data about who is participating
 
 
 english_server = Server(1148628177183326378, 1340454432428523560, 1341261059540910211)
-italiano_server = Server(1148628177183326378, 1340454432428523560, 1341261059540910211)
+italiano_server = Server(1346581861895376956, 1346581861895376957, 1346581862428180527)
+servers = [english_server, italiano_server]
 
-# determines what server user are a part of
+# determines what server user is a part of
 # returns the server that will be used for its roles and
+# WILL NOT WORK PROPERLY IF USER IS A PART OF MULTIPLE SERVERS,
+# MOST LIKELY WILL DEFAULT USER TO ENGLISH SERVER
 def get_server(servers: list[Server], memeber: discord.Member):
     for server in servers:
         guild = client.get_guild(server.server_id)
-        if guild.get_member(memeber.id): # returns the guild not the server id
-            return guild
+        if guild and guild.get_member(memeber.id):  # returns the guild not the server id
+            return server
 
     return None  # returns none to let bot know user is not part of a server
-
-SERVER_ID = 1148628177183326378
-ROLE_ID = 1340454432428523560
-CHANNEL_ID = 1341261059540910211
 
 # sets language to better communicate with users
 # THIS WILL NOT REMOVE EXISTING INSTANCES OF USERS, WE WILL JUST SEARCH FOR THE LATEST INSTANCE IN GET_LANGUAGE
@@ -149,7 +148,7 @@ class ProfileSelectView(discord.ui.View):
 
         else:
             view = LanguageSelectView(self.member, self.server, self.role)
-            await interaction.response.send_message(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+            await interaction.response.send_message(f"*select a language* / *selezionare l'icona della lingua*", view=view)
             return  # ends if language was not selected
 
         with open("accounts.txt", "r") as fr:  # checks if SteamID is a duplicate
@@ -173,10 +172,10 @@ class ProfileSelectView(discord.ui.View):
 
             # adds user steam account into the .txt file
                 # sends data to account-channel
-                print(f"{self.message.author.mention}: {self.message.content} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")
-                await self.channel.send(f"{self.message.author.mention}: {self.message.content} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")  # displays users steam account to a channel.Including discord mention id,steam id,steam name,and steam link
+                print(f"{self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")
+                await self.channel.send(f"{self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")  # displays users steam account to a channel.Including discord mention id,steam id,steam name,and steam link
                 with open("accounts.txt", "a") as fa:  # adds SteamID to list, making sure there are no duplicat accounts
-                    fa.write(f"{self.message.author.mention} {self.message.content} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}\n")
+                    fa.write(f"{self.message.author.mention} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}\n")
 
     # does not add an account to .txt file and ask them to retry
     @discord.ui.button(label="NO", style=discord.ButtonStyle.danger)
@@ -190,23 +189,33 @@ class ProfileSelectView(discord.ui.View):
 
         else:
             view = LanguageSelectView(self.member, self.message, self.role)
-            await interaction.response.send_message(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+            await interaction.response.send_message(f"*select a language* / *selezionare l'icona della lingua*", view=view)
 
 
 class Client(discord.Client):
+
+
+
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
 
     async def on_member_join(self, member):
-        server = self.get_guild(SERVER_ID)
-        role = server.get_role(ROLE_ID)
+
+        # determines what server user is a part of
+        user_server = get_server(servers, member)
+        if not user_server:
+            print(f"\nCould not find server with {member.name}")
+            return  # no valid server was found
+
+        server = self.get_guild(user_server.server_id)
+        role = server.get_role(user_server.role_id)
         print(f"\n{member.name} joined {server.name}")
         if member:
             if get_language(member.id) == "None":  # only outputs if a user has never selected a language
                 # lets user select language
                 view = LanguageSelectView(member, server, role)
                 await member.send(f"**TO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:\nPER PARTECIPARE ALLA SPERIMENTAZIONE DOVRAI FARE QUANTO SEGUE:**")
-                await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
 
             else:  # user has already attempted the process before
                 # check if member has already sent in a steamID, automatically giving them the participating role
@@ -218,18 +227,22 @@ class Client(discord.Client):
                         if get_language(member.id) == "Italiano":
                             await member.send(f"A {member.mention} è stato assegnato il ruolo **{role.name}** perché ha già fornito uno SteamID.")
 
-                        elif get_language(member.id) == "English":
+                        else: # defaults to english
                             await member.send(f"{member.mention} has been assigned the **{role.name}** role due to already provided a SteamID.")
-                        else:
-                            view = LanguageSelectView(member, server, role)
-                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
 
                         await member.add_roles(role)  # receives user role to participate
 
     async def on_message(self, message):
-        server = self.get_guild(SERVER_ID)
-        role = server.get_role(ROLE_ID)
-        channel = self.get_channel(CHANNEL_ID)
+
+        # determines what server user is a part of
+        user_server = get_server(servers, message.author)
+        if not user_server:
+            print(f"\nCould not find server with {message.author}")
+            return  # no valid server was found
+
+        server = self.get_guild(user_server.server_id)
+        role = server.get_role(user_server.role_id)
+        channel = self.get_channel(user_server.channel_id)
         if message.author == self.user:
             return  # ignore bot's own messages
 
@@ -249,7 +262,7 @@ class Client(discord.Client):
                             await member.send(f"{message.author.mention} has sent an invalid Steam account, try again!")
                         else:
                             view = LanguageSelectView(member, message, role)
-                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                            await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
                         return  # stops form sending a message to an account channel
 
                     else:  # if user was found
@@ -260,7 +273,7 @@ class Client(discord.Client):
                             await member.send(f"{message.author.mention} has sent a valid Steam account!")
                         else:
                             view = LanguageSelectView(member, server, role)
-                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                            await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
                             return  # ends if user does have not selected a language
 
                         # fancy displays of user data
@@ -288,8 +301,9 @@ class Client(discord.Client):
 
                         else:
                             view = LanguageSelectView(member, server, role)
-                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                            await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
                             return  # ends if user does have not selected a language
+
 
 
 intents = discord.Intents.default()
