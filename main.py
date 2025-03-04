@@ -10,122 +10,286 @@ load_dotenv()
 DISCORD = os.getenv("DISCORD")  # discord bot key
 STEAM = os.getenv("STEAM")  # web API key
 
+# helps categorize servers and what parts will be needed in the bots methods based on what server the user is apart of
 # all IDs used for identifying parts of the server
+# each will one from each server for each language
+class Server:
+    def __init__(self, server_id, role_id, channel_id):
+        self.server_id = server_id
+        self.role_id = role_id
+        self.channel_id = channel_id
+
+
+english_server = Server(1148628177183326378, 1340454432428523560, 1341261059540910211)
+italiano_server = Server(1148628177183326378, 1340454432428523560, 1341261059540910211)
+
+# determines what server user are a part of
+# returns the server that will be used for its roles and
+def get_server(servers: list[Server], memeber: discord.Member):
+    for server in servers:
+        guild = client.get_guild(server.server_id)
+        if guild.get_member(memeber.id): # returns the guild not the server id
+            return guild
+
+    return None  # returns none to let bot know user is not part of a server
+
 SERVER_ID = 1148628177183326378
 ROLE_ID = 1340454432428523560
 CHANNEL_ID = 1341261059540910211
 
-
-# checks if the steam account user sent is a real account
-def check_steam(steam_id):
-    find = ["An error was encountered while processing your request:<br><br>", "<h3>Failed loading profile data, please try again later.</h3><br><br>"]  # YES, I do know how bad this is, will fix later
-    url = f"https://steamcommunity.com/profiles/{steam_id}/"  # or use /profiles/{steam_id} if you have the numerical ID
+# sets language to better communicate with users
+# THIS WILL NOT REMOVE EXISTING INSTANCES OF USERS, WE WILL JUST SEARCH FOR THE LATEST INSTANCE IN GET_LANGUAGE
+def set_language(user_id, language):
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-
-        if find[0] in response.text and find[0] in response.text:
-            return False  # could not find account
-        else:
-            return True  # found account
+        with open("language.txt", "a") as f:  # adds discord id and language selected
+            f.write(f"{user_id} {language}\n")
     except Exception as e:
         print(e)
 
 
-# get name of the steam account user sent is a real account
+# determines what language to use with a user
+def get_language(user_id):
+    with open("language.txt", "r") as f:  # finds what language user has selected
+        data = f.read()
+        found = re.findall(fr'{user_id}.*', data)  # only the last on is important, as its most recent
+        if len(found) == 0:  # default to english
+            return "None"
+        if "Italiano" in found[-1]:  # if a user has selected Italiano in the past
+            return "Italiano"
+        elif "English" in found[-1]:  # if a user has selected Italian in the past
+            return "English"
+        else:  # default to english
+            return "None"
+
+
 def get_steam(steam_id):
-    url = f"https://steamcommunity.com/profiles/{steam_id}/"  # or use /profiles/{steam_id} if you have the numerical ID
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+    url = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
 
-        steam_name = re.search(r"<title>Steam Community :: .*</title>", response.text)[0]  # gets steam name
-        # clears unneeded data out of it
-        steam_name = steam_name.replace("<title>Steam Community :: ", " ")
-        steam_name = steam_name.replace("</title>", " ")
+    params = {"key": STEAM, "steamids": steam_id}
+    response = requests.get(url, params=params)
 
-        return steam_name
-    except Exception as e:
-        print(e)
+    if response.status_code == 200:
+        data = response.json()
+        players = data.get("response", {}).get("players", [])
+
+        if players:
+            player = players[0]  # Get the first player
+            return [player.get("steamid"), player.get("personaname"), player.get("profileurl")]
+
+        else:
+            return None
+
+# used for selecting your language for the bot
+# noinspection PyUnresolvedReferences
+class LanguageSelectView(discord.ui.View):
+    def __init__(self, member, server, role):
+        super().__init__()
+        self.member = member  # Stores the member messaging the bot
+        self.server = server  # Stores the member messaging the bot
+        self.role = role  # Stores the role that will be given to user
+
+        # fancy displays of user data
+        # explains what the experiment is and what participants will do
+        self.english_embed = discord.Embed(
+            title=f"TO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:",
+            description=f"**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT**\n"
+                        f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\n"
+                        f"If your SteamID was valid and confirmed, you will given the **{self.role.name}** role allowing you to participate in the experiment session."
+        )
+        self.italiano_embed = discord.Embed(
+            title=f"PER PARTECIPARE ALLA SPERIMENTALE DOVRAI FARE QUANTO SEGUE:",
+            description=f"**ATTENZIONE: TI CONSIGLIAMO ALTAMENTE DI CREARE UN NUOVO ACCOUNT PER QUESTO ESPERIMENTO, CI SONO POSSIBILITÀ CHE IL TUO ACCOUNT POTREBBE ESSERE BANNATO E I REPLAY DEL GIOCO SARANNO PUBBLICI PER I RICERCATORI, I RISULTATI CHE ALTRE RICERCHE POTRANNO VEDERE IL TUO ACCOUNT**\n"
+                        f"Per prendere parte all'esperimento dovrai fornire lo *SteamID di un account Steam appena creato o di riserva*. Il collegamento seguente ti aiuterà a [creare un nuovo account Steam](https://store.steampowered.com/join) e a [trovare il tuo SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nUna volta ottenuto il tuo SteamID, inserisci il tuo SteamID nella casella di testo sottostante senza aggiungere spazi o caratteri extra.\n"
+                        f"Se il tuo SteamID è valido e confermato, ti verrà assegnato il ruolo **{self.role.name}** che ti consentirà di partecipare alla sessione dell'esperimento."
+        )
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        return interaction.user == self.member  # Ensures only the member can interact
+
+    @discord.ui.button(label="English 🇬🇧", style=discord.ButtonStyle.primary)
+    async def english_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("You selected **English**!\n", embed=self.english_embed)
+
+        print(f'\n{self.member.name} selected English')
+        set_language(self.member.id, "English")  # sets language for future messages for discord user
+
+    @discord.ui.button(label="Italiano 🇮🇹", style=discord.ButtonStyle.primary)
+    async def italian_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Hai selezionato **Italiano**!", embed=self.italiano_embed)
+
+        print(f'\n{self.member.name} selected Italiano')
+        set_language(self.member.id, "Italiano")  # sets language for future messages for discord user
+
+
+# used to make sure user put in the correct data
+# noinspection PyUnresolvedReferences
+class ProfileSelectView(discord.ui.View):
+    def __init__(self, member, message, role, channel, server):
+        super().__init__()
+        self.member = member  # Stores the member messaging the bot
+        self.message = message  # Store the message content
+        self.role = role  # Stores the role that will be given to user
+        self.channel = channel  # Stores then chanel where the data will be sent
+        self.server = server  # Stores then server where the data will be sent
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        return interaction.user == self.member  # Ensures only the member can interact
+
+    # once a button is hit, it will send the data and let the server know they are participating
+    @discord.ui.button(label="YES", style=discord.ButtonStyle.success)
+    async def yes_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # lets them know they have been given the role and sets them up to be able to participate
+        # checks if the account already exists in the .txt file
+        print(f'\n{self.member.name} selected YES')
+        if get_language(self.member.id) == "Italiano":
+            await interaction.response.send_message(f"ora puoi partecipare!")
+
+        elif get_language(self.member.id) == "English":
+            await interaction.response.send_message(f"you are now able to participate!")
+
+        else:
+            view = LanguageSelectView(self.member, self.server, self.role)
+            await interaction.response.send_message(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+            return  # ends if language was not selected
+
+        with open("accounts.txt", "r") as fr:  # checks if SteamID is a duplicate
+            accounts = fr.read()
+            if re.search(fr'(?<!<@)\b{re.escape(self.message.content)}\b(?!>)', accounts) is not None:
+                print(f"steam account already entered")
+                if get_language(self.member.id) == "Italiano":
+                    await self.member.send(f"Qualcuno è già stato inserito, riprova!")
+                elif get_language(self.member.id) == "English":
+                    await self.member.send(f"someone has already been entered, try again!")
+                return  # stops if account already exists
+
+            # continues if no account was found
+            # give user their role to partisipate in the event
+            await self.member.add_roles(self.role)
+            print(f"Assigned role {self.role.name} to {self.member.name}")
+            if get_language(self.member.id) == "Italiano":
+                await self.member.send(f"A {self.message.author.mention} è stato assegnato il ruolo **{self.role.name}**!\n Ora puoi partecipare alle sessioni sperimentali!")
+            elif get_language(self.member.id) == "English":
+                await self.member.send(f"{self.message.author.mention} has been assigned the **{self.role.name}** role!\n You are now able to participate in the experimental sessions!")
+
+            # adds user steam account into the .txt file
+                # sends data to account-channel
+                print(f"{self.message.author.mention}: {self.message.content} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")
+                await self.channel.send(f"{self.message.author.mention}: {self.message.content} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")  # displays users steam account to a channel.Including discord mention id,steam id,steam name,and steam link
+                with open("accounts.txt", "a") as fa:  # adds SteamID to list, making sure there are no duplicat accounts
+                    fa.write(f"{self.message.author.mention} {self.message.content} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}\n")
+
+    # does not add an account to .txt file and ask them to retry
+    @discord.ui.button(label="NO", style=discord.ButtonStyle.danger)
+    async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        print(f'\n{self.member.name} selected NO')
+        if get_language(self.member.id) == "Italiano":
+            await interaction.response.send_message(f"se vuoi ancora partecipare, riprova!")
+
+        elif get_language(self.member.id) == "English":
+            await interaction.response.send_message(f"If you still want to participate, try again!")
+
+        else:
+            view = LanguageSelectView(self.member, self.message, self.role)
+            await interaction.response.send_message(f"*select the language* / *selezionare l'icona della lingua*", view=view)
 
 
 class Client(discord.Client):
     async def on_ready(self):
-        try:
-            print(f'Logged on as {self.user}!')
-        except Exception as e:
-            print(e)
+        print(f'Logged on as {self.user}!')
 
     async def on_member_join(self, member):
-        try:
-            server = self.get_guild(SERVER_ID)
-            role = server.get_role(ROLE_ID)
-            channel = self.get_channel(CHANNEL_ID)
-            print(f"{member.name} joined {server.name}")
-            if member:
+        server = self.get_guild(SERVER_ID)
+        role = server.get_role(ROLE_ID)
+        print(f"\n{member.name} joined {server.name}")
+        if member:
+            if get_language(member.id) == "None":  # only outputs if a user has never selected a language
+                # lets user select language
+                view = LanguageSelectView(member, server, role)
+                await member.send(f"**TO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:\nPER PARTECIPARE ALLA SPERIMENTAZIONE DOVRAI FARE QUANTO SEGUE:**")
+                await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+
+            else:  # user has already attempted the process before
                 # check if member has already sent in a steamID, automatically giving them the participating role
                 with open("accounts.txt", "r") as f:  # checks if user has already been mentioned
                     if member.mention in f.read():
-                        print(member.mention)
                         print(f"{member.name} already provided a SteamID")
-                        await member.send(f"{member.mention} has been assigned the **{role.name}** role due to already provided a SteamID.")
-                        await member.add_roles(role)
-                        return
 
-                # used to notify players how to participate
-                await member.send(f"welcome {member.mention} to **{server.name}**\nTO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:")
-                await member.send("**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT!**")
-                await member.send(f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\nYou will then be notified if the SteamID entered was valid or invalid. If the SteamID was invalid, make sure there are only numbers in the message sent and that you entered the SteamID correctly. If your SteamID was valid, you will given the **{role.name}** role allowing you to participate in the experiment session.")
-                await member.send(f'**DO NOT SEND AN ACCOUNT FOR SOMEONE ELSE!!!**')
-        except Exception as e:
-            print(e)
+                        # outputs and gives a role if user has already provided a steamID
+                        if get_language(member.id) == "Italiano":
+                            await member.send(f"A {member.mention} è stato assegnato il ruolo **{role.name}** perché ha già fornito uno SteamID.")
+
+                        elif get_language(member.id) == "English":
+                            await member.send(f"{member.mention} has been assigned the **{role.name}** role due to already provided a SteamID.")
+                        else:
+                            view = LanguageSelectView(member, server, role)
+                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+
+                        await member.add_roles(role)  # receives user role to participate
 
     async def on_message(self, message):
-        try:
-            if message.author == self.user:
-                return  # ignore bots own messages
+        server = self.get_guild(SERVER_ID)
+        role = server.get_role(ROLE_ID)
+        channel = self.get_channel(CHANNEL_ID)
+        if message.author == self.user:
+            return  # ignore bot's own messages
 
-            print(f'\nMessage from {message.author}: {message.content}')
+        print(f'\nMessage from {message.author}: {message.content}')
 
-            # check if message is a DM
-            if isinstance(message.channel, discord.DMChannel):
-                server = self.get_guild(SERVER_ID)
-                role = server.get_role(ROLE_ID)
-                if server:
-                    member = server.get_member(message.author.id)
-                    if member:
-                        if check_steam(message.content):  # checks if user sent a valid steam account id
-                            print(f"{member.name} sent a valid steam account")
-                            await message.channel.send(f"{message.author.mention} has sent a valid steam account!")
+        # check if message is a DM
+        if isinstance(message.channel, discord.DMChannel):
+            if server:  # get user from server
+                member = server.get_member(message.author.id)
+                if member:
+                    steam_player = get_steam(message.content)
+                    if steam_player is None:  # if it failed to find a user
+                        print(f"{member.name} sent an invalid steam account")
+                        if get_language(member.id) == "Italiano":
+                            await member.send(f"{message.author.mention} ha inviato un account Steam non valido, riprova!")
+                        elif get_language(member.id) == "English":
+                            await member.send(f"{message.author.mention} has sent an invalid Steam account, try again!")
                         else:
-                            print(f"{member.name} sent an invalid steam account")
-                            await message.channel.send(f"{message.author.mention} has sent an invalid steam account, try again!")
-                            return  # stops form sending message to account channel
+                            view = LanguageSelectView(member, message, role)
+                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                        return  # stops form sending a message to an account channel
 
-                        with open("accounts.txt", "r") as f:  # checks if SteamID is a duplicate
-                            accounts = f.read()
-                            if re.search(fr'(?<!<@)\b{re.escape(message.content)}\b(?!>)', accounts) is not None:
-                                print(f"{member.name} steam account already entered")
-                                await message.channel.send(f"{message.content} has already been entered, try again!")
-                                return  # stops form sending message to account channel
-
-                        await message.channel.send(f"{message.content} {get_steam(message.content)} *if this is not your account, try again!*")
-
-                        if role and role not in member.roles:
-                            await member.add_roles(role)
-                            print(f"Assigned role {role.name} to {member.name}")
-                            await message.channel.send(f"{message.author.mention} has been assigned the **{role.name}** role!\n You are now able to participate in the experimental sessions!")
+                    else:  # if user was found
+                        print(f"{member.name} sent a valid steam account")
+                        if get_language(member.id) == "Italiano":
+                            await member.send(f"{message.author.mention} ha inviato un account Steam valido!")
+                        elif get_language(member.id) == "English":
+                            await member.send(f"{message.author.mention} has sent a valid Steam account!")
                         else:
-                            await message.channel.send(f"{message.author.mention} has already been assigned the **{role.name}** role.")
-                            print(f"Already Assigned role {role.name} to {member.name}")
+                            view = LanguageSelectView(member, server, role)
+                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                            return  # ends if user does have not selected a language
 
-            # sends data to account-channel
-            channel = client.get_channel(CHANNEL_ID)
-            await channel.send(f"{message.author.mention}: {message.content}{get_steam(message.content)}")  # displays users steam account to channel
-            with open("accounts.txt", "a") as f:  # adds SteamID to list, making sure there are no duplicat accounts
-                f.write(f"{message.author.mention} {message.content}{get_steam(message.content)}\n")
-        except Exception as e:
-            print(e)
+                        # fancy displays of user data
+                        english_embed = discord.Embed(
+                            title="Is this your Steam Account?",
+                            description=f"**Steam ID:** `{steam_player[0]}`\n"
+                                        f"**Username:** `{steam_player[1]}`\n"
+                                        f"[**Profile Link**]({steam_player[2]})"
+                        )
+                        italiano_embed = discord.Embed(
+                            title="è questo l'account Steam corretto?",
+                            description=f"**ID di Steam:** `{steam_player[0]}`\n"
+                                        f"**Nome utente:** `{steam_player[1]}`\n"
+                                        f"[**Collegamento al profilo**]({steam_player[2]})"
+                        )
+
+                        print(f"{member.name} was promoted ProfileSelectView")
+                        # asks if user put in the correct information
+                        view = ProfileSelectView(member, message, role, channel, server)  # ask if this is the correct account
+                        if get_language(member.id) == "Italiano":
+                            await member.send(embed=italiano_embed, view=view)
+
+                        elif get_language(member.id) == "English":
+                            await member.send(embed=english_embed, view=view)
+
+                        else:
+                            view = LanguageSelectView(member, server, role)
+                            await member.send(f"*select the language* / *selezionare l'icona della lingua*", view=view)
+                            return  # ends if user does have not selected a language
 
 
 intents = discord.Intents.default()
