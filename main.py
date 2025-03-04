@@ -171,11 +171,11 @@ class ProfileSelectView(discord.ui.View):
                 await self.member.send(f"{self.message.author.mention} has been assigned the **{self.role.name}** role!\n You are now able to participate in the experimental sessions!")
 
             # adds user steam account into the .txt file
-                # sends data to account-channel
-                print(f"{self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")
-                await self.channel.send(f"{self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")  # displays users steam account to a channel.Including discord mention id,steam id,steam name,and steam link
-                with open("accounts.txt", "a") as fa:  # adds SteamID to list, making sure there are no duplicat accounts
-                    fa.write(f"{self.message.author.mention} {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}\n")
+            # sends data to account-channel
+            print(f"{self.server.name} {self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")
+            await self.channel.send(f"{self.server.name} {self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}")  # displays users steam account to a channel.Including discord mention id,steam id,steam name,and steam link
+            with open("accounts.txt", "a") as fa:  # adds SteamID to list, making sure there are no duplicat accounts
+                fa.write(f"{self.server.name} {self.message.author.mention}: {get_steam(self.message.content)[0]} {get_steam(self.message.content)[1]} {get_steam(self.message.content)[2]}\n")
 
     # does not add an account to .txt file and ask them to retry
     @discord.ui.button(label="NO", style=discord.ButtonStyle.danger)
@@ -193,8 +193,6 @@ class ProfileSelectView(discord.ui.View):
 
 
 class Client(discord.Client):
-
-
 
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
@@ -227,7 +225,7 @@ class Client(discord.Client):
                         if get_language(member.id) == "Italiano":
                             await member.send(f"A {member.mention} è stato assegnato il ruolo **{role.name}** perché ha già fornito uno SteamID.")
 
-                        else: # defaults to english
+                        else:  # defaults to english
                             await member.send(f"{member.mention} has been assigned the **{role.name}** role due to already provided a SteamID.")
 
                         await member.add_roles(role)  # receives user role to participate
@@ -303,7 +301,6 @@ class Client(discord.Client):
                             view = LanguageSelectView(member, server, role)
                             await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
                             return  # ends if user does have not selected a language
-
 
 
 intents = discord.Intents.default()
