@@ -20,9 +20,11 @@ class Server:
         self.channel_id = channel_id  # the channel that will be sent data about who is participating
 
 
-english_server = Server(1148628177183326378, 1340454432428523560, 1341261059540910211)
-italiano_server = Server(1346581861895376956, 1346581861895376957, 1346581862428180527)
-servers = [english_server, italiano_server]
+usa_server = Server(1148628177183326378, 1340454432428523560, 1341261059540910211)
+msu_server = Server(1349433403132608523, 1349433403132608524, 1349433403673415697)
+roma_server = Server(1349433409654620233, 1349433409654620234, 1349433413404459044)
+sweden_server = Server(1349433857681784905, 1349433857681784906, 1349433858126516372)
+servers = [usa_server, msu_server, roma_server, sweden_server]
 
 # determines what server user is a part of
 # returns the server that will be used for its roles and
@@ -82,7 +84,7 @@ def get_steam(steam_id):
 # noinspection PyUnresolvedReferences
 class LanguageSelectView(discord.ui.View):
     def __init__(self, member, server, role):
-        super().__init__()
+        super().__init__(timeout=None)
         self.member = member  # Stores the member messaging the bot
         self.server = server  # Stores the member messaging the bot
         self.role = role  # Stores the role that will be given to user
@@ -90,16 +92,18 @@ class LanguageSelectView(discord.ui.View):
         # fancy displays of user data
         # explains what the experiment is and what participants will do
         self.english_embed = discord.Embed(
-            title=f"TO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:",
-            description=f"**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT, THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT**\n"
-                        f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The link below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\n"
-                        f"If your SteamID was valid and confirmed, you will given the **{self.role.name}** role allowing you to participate in the experiment session."
+            title=f"TO PARTICIPATE IN THE EXPERIMENT YOU WILL NEED TO DO THE FOLLOWING:",
+            description=f"**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT (*SCHOOL EMAIL IS ACCEPTABLE*), THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT**\n"
+                        f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The links below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\n"
+                        f"If your SteamID was valid and confirmed, you will given the **{self.role.name}** role allowing you to participate in the experiment session.",
+            color=discord.Color.orange()
         )
         self.italiano_embed = discord.Embed(
-            title=f"PER PARTECIPARE ALLA SPERIMENTALE DOVRAI FARE QUANTO SEGUE:",
-            description=f"**ATTENZIONE: TI CONSIGLIAMO ALTAMENTE DI CREARE UN NUOVO ACCOUNT PER QUESTO ESPERIMENTO, CI SONO POSSIBILITÀ CHE IL TUO ACCOUNT POTREBBE ESSERE BANNATO E I REPLAY DEL GIOCO SARANNO PUBBLICI PER I RICERCATORI, I RISULTATI CHE ALTRE RICERCHE POTRANNO VEDERE IL TUO ACCOUNT**\n"
-                        f"Per prendere parte all'esperimento dovrai fornire lo *SteamID di un account Steam appena creato o di riserva*. Il collegamento seguente ti aiuterà a [creare un nuovo account Steam](https://store.steampowered.com/join) e a [trovare il tuo SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nUna volta ottenuto il tuo SteamID, inserisci il tuo SteamID nella casella di testo sottostante senza aggiungere spazi o caratteri extra.\n"
-                        f"Se il tuo SteamID è valido e confermato, ti verrà assegnato il ruolo **{self.role.name}** che ti consentirà di partecipare alla sessione dell'esperimento."
+            title=f"PER PARTECIPARE ALL’ESPERIMENTO, FAI QUANTO SEGUE:",
+            description=f"**ATTENZIONE: LA CREAZIONE DI UN NUOVO ACCOUNT PER QUESTO ESPERIMENTO E’ FORTEMENTE RACCOMANDATA (*LA EMAIL DELLA SCUOLA È ACCETTATA*). E’ POSSIBILE CHE IL TUO ACCOUNT POSSA ESSERE BANNATO E CHE I GAME REPLAY POSSANO ESSERE RESI PUBBLICI PER RICERCHE, CON LA CONSEGUENZA CHE ALTRI RICERCATORI POTREBBERO VEDERE IL TUO ACCOUNT**\n"
+                        f"Per prendere parte all’esperimento, dovrai fornire lo *SteamID di un nuovo account o di un account Steam di riserva*. I link di seguito ti aiuteranno a [creare un nuovo account Steam] (https://store.steampowered.com/join) ed a [trovare il tuo SteamID]( https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\n Una volta ottenuto il tuo SteamID, inseriscilo nella casella di testo sottostante senza inserire spazi o ulteriori caratteri.\n"
+                        f"Se il tuo SteamID è valido e confermato, ti verrà assegnato il ruolo **{self.role.name}** che ti consentirà di partecipare alla sessione dell'esperimento.",
+            color=discord.Color.orange()
         )
 
     async def interaction_check(self, interaction: discord.Interaction):
@@ -124,7 +128,7 @@ class LanguageSelectView(discord.ui.View):
 # noinspection PyUnresolvedReferences
 class ProfileSelectView(discord.ui.View):
     def __init__(self, member, message, role, channel, server):
-        super().__init__()
+        super().__init__(timeout=None)
         self.member = member  # Stores the member messaging the bot
         self.message = message  # Store the message content
         self.role = role  # Stores the role that will be given to user
@@ -141,14 +145,14 @@ class ProfileSelectView(discord.ui.View):
         # checks if the account already exists in the .txt file
         print(f'\n{self.member.name} selected YES')
         if get_language(self.member.id) == "Italiano":
-            await interaction.response.send_message(f"ora puoi partecipare!")
+            await interaction.response.send_message(f"Ora puoi partecipare!")
 
         elif get_language(self.member.id) == "English":
             await interaction.response.send_message(f"you are now able to participate!")
 
         else:
             view = LanguageSelectView(self.member, self.server, self.role)
-            await interaction.response.send_message(f"*select a language* / *selezionare l'icona della lingua*", view=view)
+            await interaction.response.send_message(f"*select a language* / *seleziona la lingua*", view=view)
             return  # ends if language was not selected
 
         with open("accounts.txt", "r") as fr:  # checks if SteamID is a duplicate
@@ -156,7 +160,7 @@ class ProfileSelectView(discord.ui.View):
             if re.search(fr'(?<!<@)\b{re.escape(self.message.content)}\b(?!>)', accounts) is not None:
                 print(f"steam account already entered")
                 if get_language(self.member.id) == "Italiano":
-                    await self.member.send(f"Qualcuno è già stato inserito, riprova!")
+                    await self.member.send(f"Qualcuno è stato già inserito, prova ancora!")
                 elif get_language(self.member.id) == "English":
                     await self.member.send(f"someone has already been entered, try again!")
                 return  # stops if account already exists
@@ -166,7 +170,7 @@ class ProfileSelectView(discord.ui.View):
             await self.member.add_roles(self.role)
             print(f"Assigned role {self.role.name} to {self.member.name}")
             if get_language(self.member.id) == "Italiano":
-                await self.member.send(f"A {self.message.author.mention} è stato assegnato il ruolo **{self.role.name}**!\n Ora puoi partecipare alle sessioni sperimentali!")
+                await self.member.send(f"Il ruolo **{self.role.name}** è stato assegnato a {self.message.author.mention}!\n Ora puoi partecipare alle sessioni sperimentali!")
             elif get_language(self.member.id) == "English":
                 await self.member.send(f"{self.message.author.mention} has been assigned the **{self.role.name}** role!\n You are now able to participate in the experimental sessions!")
 
@@ -182,21 +186,17 @@ class ProfileSelectView(discord.ui.View):
     async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         print(f'\n{self.member.name} selected NO')
         if get_language(self.member.id) == "Italiano":
-            await interaction.response.send_message(f"se vuoi ancora partecipare, riprova!")
+            await interaction.response.send_message(f"Se ancora vuoi partecipare, prova di nuovo!")
 
         elif get_language(self.member.id) == "English":
             await interaction.response.send_message(f"If you still want to participate, try again!")
 
         else:
             view = LanguageSelectView(self.member, self.message, self.role)
-            await interaction.response.send_message(f"*select a language* / *selezionare l'icona della lingua*", view=view)
+            await interaction.response.send_message(f"*select a language* / *seleziona la lingua*", view=view)
 
 
 class Client(discord.Client):
-
-    async def on_ready(self):
-        print(f'Logged on as {self.user}!')
-
     async def on_member_join(self, member):
 
         # determines what server user is a part of
@@ -212,8 +212,8 @@ class Client(discord.Client):
             if get_language(member.id) == "None":  # only outputs if a user has never selected a language
                 # lets user select language
                 view = LanguageSelectView(member, server, role)
-                await member.send(f"**TO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:\nPER PARTECIPARE ALLA SPERIMENTAZIONE DOVRAI FARE QUANTO SEGUE:**")
-                await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
+                await member.send(f"**TO PARTICIPATE IN THE EXPERIMENTAL YOU WILL NEED TO DO THE FOLLOWING:\nPER PARTECIPARE ALL’ESPERIMENTO, FAI QUANTO SEGUE:**")
+                await member.send(f"*select a language* / *seleziona la lingua*", view=view)
 
             else:  # user has already attempted the process before
                 # check if member has already sent in a steamID, automatically giving them the participating role
@@ -255,12 +255,12 @@ class Client(discord.Client):
                     if steam_player is None:  # if it failed to find a user
                         print(f"{member.name} sent an invalid steam account")
                         if get_language(member.id) == "Italiano":
-                            await member.send(f"{message.author.mention} ha inviato un account Steam non valido, riprova!")
+                            await member.send(f"{message.author.mention} ha inviato un account Steam non valido, prova ancora!")
                         elif get_language(member.id) == "English":
                             await member.send(f"{message.author.mention} has sent an invalid Steam account, try again!")
                         else:
                             view = LanguageSelectView(member, message, role)
-                            await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
+                            await member.send(f"*select a language* / *seleziona la lingua*", view=view)
                         return  # stops form sending a message to an account channel
 
                     else:  # if user was found
@@ -271,7 +271,7 @@ class Client(discord.Client):
                             await member.send(f"{message.author.mention} has sent a valid Steam account!")
                         else:
                             view = LanguageSelectView(member, server, role)
-                            await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
+                            await member.send(f"*select a language* / *seleziona la lingua*", view=view)
                             return  # ends if user does have not selected a language
 
                         # fancy displays of user data
@@ -279,13 +279,15 @@ class Client(discord.Client):
                             title="Is this your Steam Account?",
                             description=f"**Steam ID:** `{steam_player[0]}`\n"
                                         f"**Username:** `{steam_player[1]}`\n"
-                                        f"[**Profile Link**]({steam_player[2]})"
+                                        f"[**Profile Link**]({steam_player[2]})",
+                            color=discord.Color.orange()
                         )
                         italiano_embed = discord.Embed(
-                            title="è questo l'account Steam corretto?",
-                            description=f"**ID di Steam:** `{steam_player[0]}`\n"
-                                        f"**Nome utente:** `{steam_player[1]}`\n"
-                                        f"[**Collegamento al profilo**]({steam_player[2]})"
+                            title="Questo è il tuo Account Steam?",
+                            description=f"**Steam ID:** `{steam_player[0]}`\n"
+                                        f"**Username:** `{steam_player[1]}`\n"
+                                        f"[**Link al profilo**]({steam_player[2]})",
+                            color=discord.Color.orange()
                         )
 
                         print(f"{member.name} was promoted ProfileSelectView")
@@ -299,7 +301,7 @@ class Client(discord.Client):
 
                         else:
                             view = LanguageSelectView(member, server, role)
-                            await member.send(f"*select a language* / *selezionare l'icona della lingua*", view=view)
+                            await member.send(f"*select a language* / *seleziona la lingua*", view=view)
                             return  # ends if user does have not selected a language
 
 
