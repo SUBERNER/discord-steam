@@ -101,7 +101,7 @@ class LanguageSelectView(discord.ui.View):
         self.italiano_embed = discord.Embed(
             title=f"PER PARTECIPARE ALL’ESPERIMENTO, FAI QUANTO SEGUE:",
             description=f"**ATTENZIONE: LA CREAZIONE DI UN NUOVO ACCOUNT PER QUESTO ESPERIMENTO E’ FORTEMENTE RACCOMANDATA (*LA EMAIL DELLA SCUOLA È ACCETTATA*). E’ POSSIBILE CHE IL TUO ACCOUNT POSSA ESSERE BANNATO E CHE I GAME REPLAY POSSANO ESSERE RESI PUBBLICI PER RICERCHE, CON LA CONSEGUENZA CHE ALTRI RICERCATORI POTREBBERO VEDERE IL TUO ACCOUNT**\n"
-                        f"Per prendere parte all’esperimento, dovrai fornire lo *SteamID di un nuovo account o di un account Steam di riserva*. I link di seguito ti aiuteranno a [creare un nuovo account Steam] (https://store.steampowered.com/join) ed a [trovare il tuo SteamID]( https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\n Una volta ottenuto il tuo SteamID, inseriscilo nella casella di testo sottostante senza inserire spazi o ulteriori caratteri.\n"
+                        f"Per prendere parte all’esperimento, dovrai fornire lo *SteamID di un nuovo account o di un account Steam di riserva*. I link di seguito ti aiuteranno a [creare un nuovo account Steam] (https://store.steampowered.com/join) ed a [trovare il tuo SteamID](https://help.steampowered.com/it/faqs/view/2816-BE67-5B69-0FEC).\n Una volta ottenuto il tuo SteamID, inseriscilo nella casella di testo sottostante senza inserire spazi o ulteriori caratteri.\n"
                         f"Se il tuo SteamID è valido e confermato, ti verrà assegnato il ruolo **{self.role.name}** che ti consentirà di partecipare alla sessione dell'esperimento.",
             color=discord.Color.orange()
         )
