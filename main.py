@@ -93,7 +93,7 @@ class LanguageSelectView(discord.ui.View):
         # explains what the experiment is and what participants will do
         self.english_embed = discord.Embed(
             title=f"TO PARTICIPATE IN THE EXPERIMENT YOU WILL NEED TO DO THE FOLLOWING:",
-            description=f"**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT (*SCHOOL EMAIL IS ACCEPTABLE*), THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT**\n"
+            description=f"**WARNING: HIGHLY RECOMMENDED YOU CREATE A NEW ACCOUNT FOR THIS EXPERIMENT (*USING SCHOOL EMAIL FOR STEAM ACCOUNT IS ACCEPTABLE*), THERE ARE CHANCES YOUR ACCOUNT COULD BE BANNED AND GAME REPLAYS WILL BE PUBLIC FOR RESEARCHERS, RESULTS IN OTHER RESEARCHES BEING ABLE TO SEE YOUR ACCOUNT**\n"
                         f"To take part in the experiment you will need to provide the *SteamID of a newly created or spare Steam Account*, The links below will help you [create a new Steam Account](https://store.steampowered.com/join) and [find your SteamID](https://help.steampowered.com/en/faqs/view/2816-BE67-5B69-0FEC).\nOnce you have your SteamID, enter your SteamID in the textbox below without adding any spaces or extra characters.\n"
                         f"If your SteamID was valid and confirmed, you will given the **{self.role.name}** role allowing you to participate in the experiment session.",
             color=discord.Color.orange()
@@ -160,9 +160,9 @@ class ProfileSelectView(discord.ui.View):
             if re.search(fr'(?<!<@)\b{re.escape(self.message.content)}\b(?!>)', accounts) is not None:
                 print(f"steam account already entered")
                 if get_language(self.member.id) == "Italiano":
-                    await self.member.send(f"Qualcuno è stato già inserito, prova ancora!")
+                    await self.member.send(f"Qualcuno ha già utilizzato questo SteamID, prova ancora!")
                 elif get_language(self.member.id) == "English":
-                    await self.member.send(f"someone has already been entered, try again!")
+                    await self.member.send(f"Someone has already entered that SteamID, try again!")
                 return  # stops if account already exists
 
             # continues if no account was found
